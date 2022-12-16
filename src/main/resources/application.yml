@@ -1,0 +1,23 @@
+server:
+  port: 8081
+  error:
+    include-message: always
+#Configuracion de spring
+spring:
+  #Configuracion de migracion
+  flyway:
+    enabled: true
+    baselineVersion: 1
+    locations:
+      classpath: db/migration
+    sqlMigrationSuffixes: .sql
+    baselineOnMigrate: true
+    sqlMigrationPrefix: V
+    schemas: public
+
+  datasource:
+    url: jdbc:postgresql://kashin.db.elephantsql.com:5432/guxiywit?socketTimeout=3
+    username: guxiywit
+    password: MNntD9YYF9gMtM-DBevMl7iro4rNX8Nj
+    driverClassName: org.postgresql.Driver
+
