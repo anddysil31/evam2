@@ -4,12 +4,14 @@ import com.example.conferenceas.model.Conference
 import com.example.conferenceas.model.Register
 import com.example.conferenceas.repository.ConferenceRepository
 import com.example.conferenceas.repository.RegisterRepository
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.AbstractPersistable_.id
+
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -22,9 +24,7 @@ class RegisterService {
     @Autowired
     lateinit var conferenceRepository:ConferenceRepository
 
-    fun list(): List<Register> {
-        return registerRepository.findAll()
-    }
+
     fun list(pageable: Pageable, register: Register): Page<Register> {
         val matcher = ExampleMatcher.matching()
             .withIgnoreNullValues()
@@ -46,10 +46,24 @@ class RegisterService {
         return true
     }
     fun save(register: Register): Register {
-        val response = registerRepository.save(register)
-        updateCode(response)
-        updateAssisted(response)
-        return response
+        try {
+            val response = registerRepository.save(register)
+            updateCode(response)
+            conferenceRepository.findById(register.conferenceId)
+                ?:throw Exception("El ${register.conferenceId} no existe")
+            countAssisted(response)
+//        val actualizeAssistedConference = conferenceRepository.findById(response.conferenceId)!!
+//        actualizeAssistedConference.apply {
+//            if(register.assisted == true) {
+//                totalAttendees = totalAttendees?.plus(1)
+//            }
+//        }
+//        conferenceRepository.save(actualizeAssistedConference)
+            return response
+
+        }catch (ex:Exception){
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, ex.message)
+        }
     }
 
     fun update(register: Register): Register {
@@ -74,33 +88,34 @@ class RegisterService {
 
     fun updateAssisted(register: Register):Register{
         try {
+            val response = registerRepository.save(register)
             val registerResponse = registerRepository.findById(register.id)
                 ?:throw Exception("El ${register.id} en registro no existe")
             return registerRepository.save(register)
-            val conferenceResponse = conferenceRepository.findById(register.conferenceId)
-            registerResponse?.apply {
+                ?:throw Exception("El id ${register.conferenceId} en conferencia no existe")
+            registerResponse.apply {
                 assisted = register.assisted
-                registerRepository.save(registerResponse!!)
-                if (assisted == true) {
-                    conferenceResponse?.apply {
-                        totalAttendees = totalAttendees?.plus(1)
-                    }
-                    conferenceRepository.save(conferenceResponse!!)
-
-                }
-
 
             }
+
+            registerRepository.save(registerResponse)
+            return response
 
         }catch (ex:Exception){
             throw  ResponseStatusException(HttpStatus.NOT_FOUND, ex.message)
         }
-        //        conferenceResponse?.apply{
-//            totalAttendees = totalAttendees?.plus(1)
-//        }
-//        conferenceRepository.save(conferenceResponse!!)
+
+    }
+
+    fun countAssisted(register: Register){
+        val sumAssisted = registerRepository.sumAssisted(register.conferenceId)
+        val conferenceResponse = conferenceRepository.findById(register.conferenceId)
+        conferenceResponse?.apply {
+            totalAttendees = sumAssisted
+        }
+        conferenceRepository.save(conferenceResponse!!)
     }
 
 
-//}
+
 }

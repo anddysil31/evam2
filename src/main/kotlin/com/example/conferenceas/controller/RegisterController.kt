@@ -53,6 +53,7 @@ class RegisterController {
 
     @PatchMapping
     fun updateAssisted(@RequestBody register: Register):ResponseEntity<Register>{
+        registerService.save(register)
         return ResponseEntity(registerService.updateAssisted(register), HttpStatus.ACCEPTED)
     }
 

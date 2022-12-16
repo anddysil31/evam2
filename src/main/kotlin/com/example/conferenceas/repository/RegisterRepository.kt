@@ -14,4 +14,7 @@ interface RegisterRepository:JpaRepository<Register, Long> {
 
     @Query(nativeQuery = true)
     fun allConferences(@Param("mid") mid:Long?):Any?
+
+    @Query(nativeQuery = true)
+    fun sumAssisted(@Param("conferenceId")conferenceId: Long?):Long?
 }
